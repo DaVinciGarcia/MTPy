@@ -51,7 +51,7 @@ class MR:
 class MRSet:
     mr_list: List[MR]
 
-
+# Parser
 class MRDLParser:
     def parse_mrset(self, mrdl_data):
         mr_list = [self.parse_mr(mr_json) for mr_json in mrdl_data["mrSet"]]
@@ -101,7 +101,7 @@ class MRDLParser:
         else:
             raise ValueError(f"Unsupported expression type: {type(expr_json)}")
         
-mrdl_data = load_mrdl("example.mrdl.json", "mrdl_schema.json")
+mrdl_data = load_mrdl("example2.mrdl.json", "mrdl_schema.json")
 parser = MRDLParser()
 mrset = parser.parse_mrset(mrdl_data)
 
