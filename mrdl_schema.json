@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "mrSet": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/MR" }
+    }
+  },
+  "definitions": {
+    "MR": {
+      "type": "object",
+      "properties": {
+        "R": { "$ref": "#/definitions/RelationGroup" },
+        "Rf": { "$ref": "#/definitions/RelationGroup" }
+      },
+      "required": ["R", "Rf"]
+    },
+    "RelationGroup": {
+      "type": "object",
+      "properties": {
+        "relations": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Relation" }
+        },
+        "connective": {
+          "type": "string",
+          "enum": ["AND", "OR"]
+        }
+      },
+      "required": ["relations"]
+    },
+    "Relation": {
+      "type": "object",
+      "properties": {
+        "negation": { "type": "boolean" },
+        "expressionFollowUp": { "$ref": "#/definitions/Expression" },
+        "operator": { "type": "string" },
+        "expressionSource": { "$ref": "#/definitions/Expression" }
+      },
+      "required": ["expressionFollowUp", "operator", "expressionSource"]
+    },
+    "Expression": {
+      "oneOf": [
+        { "$ref": "#/definitions/Variable" },
+        { "$ref": "#/definitions/Operation" },
+        { "type": "number" } 
+      ]
+    },
+    "Variable": {
+      "type": "string",
+      "pattern": "^(source|followUp)\\.\\w+$"
+    },
+    "Operation": {
+      "type": "object",
+      "properties": {
+        "operator": { "type": "string" },
+        "left": { "$ref": "#/definitions/Expression" },
+        "right": { "$ref": "#/definitions/Expression" }
+      },
+      "required": ["operator", "left", "right"]
+    }
+  }
+}
