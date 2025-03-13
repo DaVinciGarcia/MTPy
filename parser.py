@@ -6,7 +6,7 @@ from typing import List, Union
 # Load and Validate Parser
 def load_mrdl(json_path, schema_path):
     with open(json_path) as f:
-        mrdl_data = json.load(f)
+        mrdl_data = json.load(f) # json.load(f) converts json into python dict 
     with open(schema_path) as f:
         schema = json.load(f)
     validate(mrdl_data, schema)  # Validate against schema
@@ -51,7 +51,7 @@ class MR:
 class MRSet:
     mr_list: List[MR]
 
-# Parser
+# Parser, class MRDLParser is responsible for converting a JSON structure into Python objects
 class MRDLParser:
     def parse_mrset(self, mrdl_data):
         mr_list = [self.parse_mr(mr_json) for mr_json in mrdl_data["mrSet"]]
@@ -101,9 +101,11 @@ class MRDLParser:
         else:
             raise ValueError(f"Unsupported expression type: {type(expr_json)}")
         
+
 mrdl_data = load_mrdl("example2.mrdl.json", "mrdl_schema.json")
 parser = MRDLParser()
 mrset = parser.parse_mrset(mrdl_data)
+
 
 # Access parsed data
 mr = mrset.mr_list[0]

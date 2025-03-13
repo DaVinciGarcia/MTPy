@@ -4,7 +4,7 @@ from hypothesis import given, settings
 import inspect
 from typing import Dict, Any, List, Tuple
 
-# Assume these are the parsed MRDL classes from earlier
+
 @dataclass
 class Variable:
     name: str
@@ -106,10 +106,14 @@ class AEMRTestCaseGenerator:
         """
         Recursively evaluate an expression using source input values.
         """
-        if isinstance(expr, Variable):
-            # Extract value from source input (e.g., "source.x" → source_input["x"])
+        # Handle numeric literals (int/float)
+        if isinstance(expr, (int, float)):
+            return expr
+        # Handle Variables
+        elif isinstance(expr, Variable):
             param = expr.name.split(".")[1]
             return source_input[param]
+        # Handle Operations
         elif isinstance(expr, Operation):
             left = self._evaluate_expression(expr.left, source_input)
             right = self._evaluate_expression(expr.right, source_input)
@@ -127,8 +131,8 @@ class AEMRTestCaseGenerator:
         else:
             raise ValueError(f"Unsupported expression type: {type(expr)}")
 
-# Example Usage
 if __name__ == "__main__":
+
     # 1. Define a sample MR (followUp.x = source.x * -1)
     sample_mr = MR(
         R=RelationGroup(
@@ -148,6 +152,7 @@ if __name__ == "__main__":
         ),
         Rf=RelationGroup(relations=[], connective="AND")  # Simplified for example
     )
+
     mrset = MRSet(mr_list=[sample_mr])
 
     # 2. Define a sample function to test
@@ -156,8 +161,11 @@ if __name__ == "__main__":
 
     # 3. Generate test cases
     generator = AEMRTestCaseGenerator(mrset, sample_function)
+    
     test_cases = generator.generate_test_cases()
 
     # 4. Print generated test cases
-    for source, followup in test_cases[:5]:  # Print first 5
+    for source, followup in test_cases[:10]:  # Print first 5
         print(f"Source: {source}, Follow-up: {followup}")
+
+        
