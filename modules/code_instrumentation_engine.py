@@ -103,7 +103,7 @@ class CodeInstrumentationEngine:
 
 # Load the engine
 engine = CodeInstrumentationEngine(
-    target_module_path="path/to/program.py",
+    target_module_path="program.py",
     function_name="square"
 )
 

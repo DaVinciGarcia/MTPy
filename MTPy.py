@@ -304,6 +304,8 @@ if __name__ == "__main__":
     mrdl_data = load_mrdl("example.mrdl.json", "mrdl_schema.json")
     parser = MRDLParser()
     mrset = parser.parse_mrset(mrdl_data)
+    # print("----------------------MR SET---------------------------")
+    # print(mrset)
 
     # Step 2: Initialize the Code Instrumentation Engine
     engine = CodeInstrumentationEngine(  # <-- This was missing!
@@ -316,6 +318,8 @@ if __name__ == "__main__":
 
     # Step 4: Generate test cases
     test_cases = generator.generate_test_cases()
+    # print("--------------------TEST CASES----------------------------")
+    # print(test_cases)
 
     # Step 5: Execute tests and check MRs
     for source_input, followup_input in test_cases:

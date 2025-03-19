@@ -1,0 +1,27 @@
+{
+    "mrSet": [
+      {
+        "R": {
+          "relations": [
+            {
+              "expressionFollowUp": "followUp.input",
+              "operator": "==",
+              "expressionSource": {
+                "operator": "REVERSE",
+                "left": "source.input"
+              }
+            }
+          ]
+        },
+        "Rf": {
+          "relations": [
+            {
+              "expressionFollowUp": "followUp.output",
+              "operator": "==",
+              "expressionSource": "source.input"
+            }
+          ]
+        }
+      }
+    ]
+  }

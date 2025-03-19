@@ -1,0 +1,15 @@
+{
+  "mrSet": [
+    {
+      "Rf": {
+        "relations": [
+          {
+            "expressionFollowUp": "source.output",
+            "operator": "≥",
+            "expressionSource": 0
+          }
+        ]
+      }
+    }
+  ]
+}

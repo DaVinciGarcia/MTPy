@@ -1,0 +1,32 @@
+{
+    "mrSet": [
+      {
+        "R": {
+          "relations": [
+            {
+              "expressionFollowUp": "followUp.x",
+              "operator": "==",
+              "expressionSource": {
+                "operator": "*",
+                "left": "source.x",
+                "right": -1
+              }
+            }
+          ]
+        },
+        "Rf": {
+          "relations": [
+            {
+              "expressionFollowUp": "followUp.output",
+              "operator": "==",
+              "expressionSource": {
+                "operator": "*",
+                "left": "source.output",
+                "right": -1
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }

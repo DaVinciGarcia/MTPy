@@ -1,0 +1,35 @@
+{
+    "mrSet": [
+      {
+        "R": {
+          "relations": [
+            {
+              "expressionFollowUp": "followUp.numbers",
+              "operator": "==",
+              "expressionSource": {
+                "operator": "+",
+                "left": "source.numbers",
+                "right": {
+                  "operator": "LIST",
+                  "values": [10, 10, 10]
+                }
+              }
+            }
+          ]
+        },
+        "Rf": {
+          "relations": [
+            {
+              "expressionFollowUp": "followUp.output",
+              "operator": "==",
+              "expressionSource": {
+                "operator": "+",
+                "left": "source.output",
+                "right": 10
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
