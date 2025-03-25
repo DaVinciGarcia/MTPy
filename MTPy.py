@@ -153,44 +153,46 @@ class AEMRTestCaseGenerator:
 
     def _apply_relation(self, relation: Relation, source_input: Dict) -> Dict:
         """
-        Apply the MR's R relation to generate follow-up input.
+        Generate follow-up input using the R relation.
         """
         followup_input = {}
-
-        # Evaluate expression_source for each parameter
+        context = {f"source.{param}": value for param, value in source_input.items()}
+        
         for param in self.param_names:
-            source_var = Variable(f"source.{param}")
-            followup_var = Variable(f"followUp.{param}")
-            
-            # Check if this parameter is transformed in the relation
-            if relation.expression_follow_up.name == followup_var.name:
-                # Evaluate the expression using source input values
+            followup_var = f"followUp.{param}"
+            if relation.expression_follow_up.name == followup_var:
+                # Evaluate the expression using the context (source.x, etc.)
                 followup_value = self._evaluate_expression(
-                    relation.expression_source, 
-                    source_input
+                    relation.expression_source,
+                    context
                 )
                 followup_input[param] = followup_value
             else:
-                # Copy unchanged parameter
                 followup_input[param] = source_input[param]
-
+        
         return followup_input
 
-    def _evaluate_expression(self, expr: Any, source_input: Dict) -> Any:
+
+    def _evaluate_expression(self, expr: Any, context: Dict[str, Any]) -> Any:
+
         """
-        Recursively evaluate an expression using source input values.
+        Evaluate an expression with access to variables in `context`.
+        - `context`: A dictionary with keys like `source.x` or `source.output`.
         """
-        # Handle numeric literals (int/float)
+
         if isinstance(expr, (int, float)):
-            return expr
-        # Handle Variables
+            return expr  # Return numeric literals directly
         elif isinstance(expr, Variable):
-            param = expr.name.split(".")[1]
-            return source_input[param]
-        # Handle Operations
+            # Handle variables like "source.x" or "source.output"
+            parts = expr.name.split(".")
+            if parts[0] == "source" or parts[0] == "followUp":
+                return context.get(expr.name)  # Get from context
+            else:
+                raise ValueError(f"Invalid variable: {expr.name}")
         elif isinstance(expr, Operation):
-            left = self._evaluate_expression(expr.left, source_input)
-            right = self._evaluate_expression(expr.right, source_input)
+            # Recursively evaluate left and right with the same context
+            left = self._evaluate_expression(expr.left, context)
+            right = self._evaluate_expression(expr.right, context)
             
             if expr.operator == '+':
                 return left + right
@@ -204,6 +206,48 @@ class AEMRTestCaseGenerator:
                 raise ValueError(f"Unsupported operator: {expr.operator}")
         else:
             raise ValueError(f"Unsupported expression type: {type(expr)}")
+            
+    def verify_mr(self, source_output: Any, followup_output: Any, rf_relation: RelationGroup) -> bool:
+
+        """
+        Verify if the follow-up output satisfies the Rf relation.
+        """
+
+        # Assume one relation in Rf for simplicity
+        relation = rf_relation.relations[0]
+        
+        # Context includes source.output and followUp.output
+        context = {
+            "source.output": source_output,
+            "followUp.output": followup_output
+        }
+        
+        # Evaluate the expected follow-up output from the Rf relation
+        expected_followup_output = self._evaluate_expression(
+            relation.expression_source,
+            context
+        )
+        
+        # Apply the operator to check the condition
+        return self._apply_operator(
+            followup_output,
+            relation.operator,
+            expected_followup_output
+        )
+    
+    def _apply_operator(self, left: Any, operator: str, right: Any) -> bool:
+        """
+        Evaluate a comparison operator (e.g., "==", ">=").
+        """
+        if operator == "==":
+            return left == right
+        elif operator == ">=":
+            return left >= right
+        elif operator == "⊆":
+            return set(left).issubset(set(right))
+        # Add other operators as needed
+        else:
+            raise ValueError(f"Unsupported operator: {operator}")
 
 
 @dataclass
@@ -301,16 +345,22 @@ class CodeInstrumentationEngine:
 
 if __name__ == "__main__":
     # Step 1: Load and parse MRDL
-    mrdl_data = load_mrdl("example.mrdl.json", "mrdl_schema.json")
+    # "/home/leonardo/Documentos/MTPy/MTPy/MRDLs/example.mrdl.json"
+    # "/home/leonardo/Documentos/MTPy/MTPy/MRDLs/cube.mrdl.json"
+    mrdl_data = load_mrdl("/home/leonardo/Documentos/MTPy/MTPy/MRDLs/cube.mrdl.json", 
+                          "/home/leonardo/Documentos/MTPy/MTPy/MRDLs/mrdl_schema.json")
+    
     parser = MRDLParser()
     mrset = parser.parse_mrset(mrdl_data)
     # print("----------------------MR SET---------------------------")
     # print(mrset)
 
     # Step 2: Initialize the Code Instrumentation Engine
+    # "/home/leonardo/Documentos/MTPy/MTPy/SUTs/program.py"
+    # "/home/leonardo/Documentos/MTPy/MTPy/SUTs/cube.py"
     engine = CodeInstrumentationEngine(  # <-- This was missing!
-        target_module_path="program.py",
-        function_name="square"
+        target_module_path="/home/leonardo/Documentos/MTPy/MTPy/SUTs/cube.py",
+        function_name="cube"
     )
 
     # Step 3: Initialize the Test Case Generator with the engine's function
@@ -322,6 +372,7 @@ if __name__ == "__main__":
     # print(test_cases)
 
     # Step 5: Execute tests and check MRs
+    # Inside your test workflow loop:
     for source_input, followup_input in test_cases:
         # Execute source test case
         source_result = engine.execute_test_case(source_input)
@@ -335,6 +386,13 @@ if __name__ == "__main__":
             print(f"Follow-up test failed: {followup_input} → {followup_result.error}")
             continue
 
-        # Verify MR (example: followup.output == source.output)
-        if followup_result.output != source_result.output:
+        # Verify MR using the parsed Rf relation
+        mr = mrset.mr_list[0]  # Assuming one MR for simplicity
+        is_valid = generator.verify_mr(
+            source_result.output,
+            followup_result.output,
+            mr.Rf
+        )
+        
+        if not is_valid:
             print(f"MR Violated: {source_input} → {followup_input}")
