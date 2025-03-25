@@ -1,2 +1,2 @@
-def absolute_value(x: float) -> float:
+def abs_value(x: float) -> float:
     return abs(x)

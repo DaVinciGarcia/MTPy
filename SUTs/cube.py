@@ -1,2 +1,2 @@
 def cube(x: float) -> float:
-    return x ** 2
+    return x ** 3

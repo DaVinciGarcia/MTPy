@@ -4,14 +4,14 @@
       "R": {
         "relations": [
           {
-            "expressionFollowUp": "followUp.input",
+            "expressionFollowUp": "followUp.lst",
             "operator": "⊆",
-            "expressionSource": "source.input"
+            "expressionSource": "source.lst"
           },
           {
-            "expressionFollowUp": "source.input",
+            "expressionFollowUp": "source.lst",
             "operator": "⊆",
-            "expressionSource": "followUp.input"
+            "expressionSource": "followUp.lst"
           }
         ],
         "connective": "AND"

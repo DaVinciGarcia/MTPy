@@ -148,7 +148,11 @@ class AEMRTestCaseGenerator:
         """
         strategies = {}
         for param in self.param_names:
-            strategies[param] = st.integers()
+            # Generate lists for parameters named "lst"
+            if param == "lst":
+                strategies[param] = st.lists(st.integers())  # Lists of integers
+            else:
+                strategies[param] = st.integers()  # Default to integers
         return st.fixed_dictionaries(strategies)
 
     def _apply_relation(self, relation: Relation, source_input: Dict) -> Dict:
@@ -284,13 +288,16 @@ class CodeInstrumentationEngine:
             signal.alarm(0)
 
     def _capture_output(self, func, *args, **kwargs) -> Tuple[Any, str]:
-        """Capture stdout/stderr during execution."""
         original_stdout = sys.stdout
         sys.stdout = captured_stdout = StringIO()
+        logs = ""  # Initialize logs
         try:
             result = func(*args, **kwargs)
             logs = captured_stdout.getvalue()
             return result, logs
+        except Exception as e:
+            logs = captured_stdout.getvalue()  # Capture logs even on error
+            raise e
         finally:
             sys.stdout = original_stdout
 
@@ -347,20 +354,20 @@ if __name__ == "__main__":
     # Step 1: Load and parse MRDL
     # "/home/leonardo/Documentos/MTPy/MTPy/MRDLs/example.mrdl.json"
     # "/home/leonardo/Documentos/MTPy/MTPy/MRDLs/cube.mrdl.json"
-    mrdl_data = load_mrdl("/home/leonardo/Documentos/MTPy/MTPy/MRDLs/cube.mrdl.json", 
+
+    mrdl_data = load_mrdl("/home/leonardo/Documentos/MTPy/MTPy/MRDLs/sorter.mrdl.json", 
                           "/home/leonardo/Documentos/MTPy/MTPy/MRDLs/mrdl_schema.json")
     
     parser = MRDLParser()
     mrset = parser.parse_mrset(mrdl_data)
-    # print("----------------------MR SET---------------------------")
-    # print(mrset)
-
+    
     # Step 2: Initialize the Code Instrumentation Engine
     # "/home/leonardo/Documentos/MTPy/MTPy/SUTs/program.py"
     # "/home/leonardo/Documentos/MTPy/MTPy/SUTs/cube.py"
-    engine = CodeInstrumentationEngine(  # <-- This was missing!
-        target_module_path="/home/leonardo/Documentos/MTPy/MTPy/SUTs/cube.py",
-        function_name="cube"
+    
+    engine = CodeInstrumentationEngine(  
+        target_module_path="/home/leonardo/Documentos/MTPy/MTPy/SUTs/sorter.py",
+        function_name="sort_list"
     )
 
     # Step 3: Initialize the Test Case Generator with the engine's function
@@ -368,8 +375,6 @@ if __name__ == "__main__":
 
     # Step 4: Generate test cases
     test_cases = generator.generate_test_cases()
-    # print("--------------------TEST CASES----------------------------")
-    # print(test_cases)
 
     # Step 5: Execute tests and check MRs
     # Inside your test workflow loop:
