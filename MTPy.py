@@ -1,4 +1,5 @@
 import json
+import random
 from jsonschema import validate
 from dataclasses import dataclass
 from typing import List, Dict, Any, Union, Optional, Tuple
@@ -126,64 +127,64 @@ class AEMRTestCaseGenerator:
         self.param_names = inspect.getfullargspec(func).args  # Get function parameters
 
     def generate_test_cases(self) -> List[Tuple[Dict, Dict]]:
-        """
-        Generates source and follow-up test cases for all MRs in the MRSet.
-        Returns a list of tuples: (source_input_dict, followup_input_dict)
-        """
         test_cases = []
-
         for mr in self.mrset.mr_list:
-            # Assume each MR.R has exactly one relation for simplicity
-            relation = mr.R.relations[0]
-            
-            # Get Hypothesis strategy for source inputs
+            # Pass the entire RelationGroup (R) to _apply_relation
+            relation_group = mr.R
             source_strategy = self._get_source_strategy()
             
-            # Generate source inputs using Hypothesis
             @given(source_strategy)
             @settings(max_examples=100)
             def _generate(source_input):
-                followup_input = self._apply_relation(relation, source_input)
+                followup_input = self._apply_relation(relation_group, source_input)
                 test_cases.append((source_input, followup_input))
-
-            _generate()  # Trigger Hypothesis generation
-
+            
+            _generate()
         return test_cases
 
     def _get_source_strategy(self) -> st.SearchStrategy:
-        """
-        Create a Hypothesis strategy for generating valid source inputs.
-        Generates lists for parameters named "lst", "arr", or "list".
-        """
         strategies = {}
-        list_params = {"lst", "arr", "list"}  # Add more names as needed
         for param in self.param_names:
-            if param.lower() in list_params:
-                # Generate non-empty lists of integers
-                strategies[param] = st.lists(st.integers(), min_size=1)
+            if param in ["input", "lst", "arr"]:
+                # Generate non-empty lists with unique elements for better permutation coverage
+                strategies[param] = st.lists(
+                    st.integers(min_value=-100, max_value=100),
+                    min_size=3,  # Ensure lists are permutable
+                    unique=True
+                )
             else:
-                strategies[param] = st.integers()  # Default to integers
+                strategies[param] = st.integers()
         return st.fixed_dictionaries(strategies)
 
-    def _apply_relation(self, relation: Relation, source_input: Dict) -> Dict:
-        """
-        Generate follow-up input using the R relation.
-        """
+    def _apply_relation(self, relation_group: RelationGroup, source_input: Dict) -> Dict:
         followup_input = {}
         context = {f"source.{param}": value for param, value in source_input.items()}
-        
-        for param in self.param_names:
-            followup_var = f"followUp.{param}"
-            if relation.expression_follow_up.name == followup_var:
-                # Evaluate the expression using the context (source.x, etc.)
+
+        # Check if the R defines a permutation (subset both ways + same length)
+        is_permutation_mr = (
+            len(relation_group.relations) >= 3 and
+            all(
+                rel.operator == "⊆" 
+                for rel in relation_group.relations[:2]
+            ) and
+            "LEN" in str(relation_group.relations[2])
+        )
+
+        if is_permutation_mr:
+            # Generate a permutation of the source list
+            source_list = source_input["arr"]  # or "lst" depending on parameter name
+            followup_list = random.sample(source_list, len(source_list))
+            followup_input["arr"] = followup_list
+        else:
+            # Handle other transformations (e.g., arithmetic)
+            for relation in relation_group.relations:
+                param = relation.expression_follow_up.name.split(".")[1]  # e.g., "x"
                 followup_value = self._evaluate_expression(
                     relation.expression_source,
                     context
                 )
                 followup_input[param] = followup_value
-            else:
-                followup_input[param] = source_input[param]
-        
+
         return followup_input
 
 
@@ -372,7 +373,7 @@ if __name__ == "__main__":
     # "/home/leonardo/Documentos/MTPy/MTPy/MRDLs/example.mrdl.json"
     # "/home/leonardo/Documentos/MTPy/MTPy/MRDLs/cube.mrdl.json"
 
-    mrdl_data = load_mrdl("/home/leonardo/Documentos/MTPy/MTPy/MRDLs/robustsorter.mrdl.json", 
+    mrdl_data = load_mrdl("/home/leonardo/Documentos/MTPy/MTPy/MRDLs/sortertest.mrdl.json", 
                           "/home/leonardo/Documentos/MTPy/MTPy/MRDLs/mrdl_schema.json")
     
     parser = MRDLParser()
@@ -383,7 +384,7 @@ if __name__ == "__main__":
     # "/home/leonardo/Documentos/MTPy/MTPy/SUTs/cube.py"
 
     engine = CodeInstrumentationEngine(  
-        target_module_path="/home/leonardo/Documentos/MTPy/MTPy/SUTs/merge_sort.py",
+        target_module_path="/home/leonardo/Documentos/MTPy/MTPy/SUTs/bugged_mergesort.py",
         function_name="mergesort"
     )
 
@@ -397,6 +398,10 @@ if __name__ == "__main__":
     # Inside your test workflow loop:
     for source_input, followup_input in test_cases:
         # Execute source test case
+        print(source_input)
+        print(followup_input)
+
+
         source_result = engine.execute_test_case(source_input)
         if source_result.status != "pass":
             print(f"Source test failed: {source_input} → {source_result.error}")
