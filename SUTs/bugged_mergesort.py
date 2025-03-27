@@ -23,6 +23,8 @@ def mergesort(arr):
         return merge(left, right)
 
 
+mergesort([0, 1, 2])
+
 
 """
 Merge Sort

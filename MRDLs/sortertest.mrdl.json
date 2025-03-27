@@ -1,0 +1,19 @@
+{
+    "mrSet": [
+      {
+        "R": {
+          "relations": [
+            {"expressionFollowUp": "followUp.arr", "operator": "⊆", "expressionSource": "source.arr"},
+            {"expressionFollowUp": "source.arr", "operator": "⊆", "expressionSource": "followUp.arr"},
+            {"expressionFollowUp": {"operator": "LEN", "list": "followUp.arr"}, "operator": "==", "expressionSource": {"operator": "LEN", "list": "source.arr"}}
+          ],
+          "connective": "AND"
+        },
+        "Rf": {
+          "relations": [
+            {"expressionFollowUp": "followUp.output", "operator": "==", "expressionSource": "source.output"}
+          ]
+        }
+      }
+    ]
+  }
