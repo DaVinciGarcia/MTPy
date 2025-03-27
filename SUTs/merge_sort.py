@@ -1,4 +1,3 @@
-
 def mergesort(arr):
     def merge(left, right):
         result = []

@@ -364,10 +364,10 @@ if __name__ == "__main__":
     # Step 2: Initialize the Code Instrumentation Engine
     # "/home/leonardo/Documentos/MTPy/MTPy/SUTs/program.py"
     # "/home/leonardo/Documentos/MTPy/MTPy/SUTs/cube.py"
-    
+
     engine = CodeInstrumentationEngine(  
-        target_module_path="/home/leonardo/Documentos/MTPy/MTPy/SUTs/sorter.py",
-        function_name="sort_list"
+        target_module_path="/home/leonardo/Documentos/MTPy/MTPy/SUTs/merge_sort.py",
+        function_name="mergesort"
     )
 
     # Step 3: Initialize the Test Case Generator with the engine's function
