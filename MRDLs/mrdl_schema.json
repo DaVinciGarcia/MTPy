@@ -44,8 +44,17 @@
       "oneOf": [
         { "$ref": "#/definitions/Variable" },
         { "$ref": "#/definitions/Operation" },
+        { "$ref": "#/definitions/Function" },
         { "type": "number" } 
       ]
+    },
+    "Function": {  
+      "type": "object",
+      "properties": {
+        "operator": { "type": "string" },
+        "list": { "type": "string" }  
+      },
+      "required": ["operator", "list"]
     },
     "Variable": {
       "type": "string",

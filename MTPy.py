@@ -46,6 +46,11 @@ class Relation:
     expression_source: Union[Variable, Operation, Quantifier]
 
 @dataclass
+class Function:
+    operator: str  # e.g., "LEN"
+    list: str      # e.g., "source.input"
+
+@dataclass
 class RelationGroup:
     relations: List[Relation]
     connective: str  # "AND" or "OR"
@@ -84,19 +89,24 @@ class MRDLParser:
 
     def parse_expression(self, expr_json):
         if isinstance(expr_json, (int, float)):
-            # Handle numeric literals (e.g., -1, 3.14)
             return expr_json
         elif isinstance(expr_json, str):
-            # Handle Variables (e.g., "source.x")
             return Variable(expr_json)
         elif isinstance(expr_json, dict):
-            # Handle Operations or Quantifiers
-            if "operator" in expr_json:
-                return Operation(
-                    expr_json["operator"],
-                    self.parse_expression(expr_json["left"]),
-                    self.parse_expression(expr_json["right"])
+            # Handle Functions (e.g., LEN)
+            if "operator" in expr_json and "list" in expr_json:
+                return Function(
+                    operator=expr_json["operator"],
+                    list=expr_json["list"]
                 )
+            # Handle Operations (e.g., +, ⊆)
+            elif "operator" in expr_json:
+                return Operation(
+                    operator=expr_json["operator"],
+                    left=self.parse_expression(expr_json["left"]),
+                    right=self.parse_expression(expr_json["right"])
+                )
+            # Handle Quantifiers (∀, ∃)
             elif "type" in expr_json:
                 return Quantifier(
                     expr_json["type"],
@@ -107,8 +117,7 @@ class MRDLParser:
             else:
                 raise ValueError(f"Invalid expression: {expr_json}")
         else:
-            raise ValueError(f"Unsupported expression type: {type(expr_json)}")
-        
+            raise ValueError(f"Unsupported expression type: {type(expr_json)}")   
 
 class AEMRTestCaseGenerator:
     def __init__(self, mrset: MRSet, func):
@@ -144,13 +153,14 @@ class AEMRTestCaseGenerator:
     def _get_source_strategy(self) -> st.SearchStrategy:
         """
         Create a Hypothesis strategy for generating valid source inputs.
-        Defaults to integer values for all parameters.
+        Generates lists for parameters named "lst", "arr", or "list".
         """
         strategies = {}
+        list_params = {"lst", "arr", "list"}  # Add more names as needed
         for param in self.param_names:
-            # Generate lists for parameters named "lst"
-            if param == "lst":
-                strategies[param] = st.lists(st.integers())  # Lists of integers
+            if param.lower() in list_params:
+                # Generate non-empty lists of integers
+                strategies[param] = st.lists(st.integers(), min_size=1)
             else:
                 strategies[param] = st.integers()  # Default to integers
         return st.fixed_dictionaries(strategies)
@@ -193,6 +203,13 @@ class AEMRTestCaseGenerator:
                 return context.get(expr.name)  # Get from context
             else:
                 raise ValueError(f"Invalid variable: {expr.name}")
+        elif isinstance(expr, Function):
+            if expr.operator == "LEN":
+                # Evaluate the list and return its length
+                list_value = context.get(expr.list)
+                return len(list_value)
+            else:
+                raise ValueError(f"Unsupported function: {expr.operator}")
         elif isinstance(expr, Operation):
             # Recursively evaluate left and right with the same context
             left = self._evaluate_expression(expr.left, context)
@@ -290,13 +307,13 @@ class CodeInstrumentationEngine:
     def _capture_output(self, func, *args, **kwargs) -> Tuple[Any, str]:
         original_stdout = sys.stdout
         sys.stdout = captured_stdout = StringIO()
-        logs = ""  # Initialize logs
+        logs = ""  # Initialize logs here
         try:
             result = func(*args, **kwargs)
             logs = captured_stdout.getvalue()
             return result, logs
         except Exception as e:
-            logs = captured_stdout.getvalue()  # Capture logs even on error
+            logs = captured_stdout.getvalue()
             raise e
         finally:
             sys.stdout = original_stdout
@@ -355,7 +372,7 @@ if __name__ == "__main__":
     # "/home/leonardo/Documentos/MTPy/MTPy/MRDLs/example.mrdl.json"
     # "/home/leonardo/Documentos/MTPy/MTPy/MRDLs/cube.mrdl.json"
 
-    mrdl_data = load_mrdl("/home/leonardo/Documentos/MTPy/MTPy/MRDLs/sorter.mrdl.json", 
+    mrdl_data = load_mrdl("/home/leonardo/Documentos/MTPy/MTPy/MRDLs/robustsorter.mrdl.json", 
                           "/home/leonardo/Documentos/MTPy/MTPy/MRDLs/mrdl_schema.json")
     
     parser = MRDLParser()

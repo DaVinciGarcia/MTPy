@@ -1,41 +1,41 @@
 {
-    "mrSet": [
-      {
-        "R": {
-          "relations": [
-            {
-              "expressionFollowUp": "followUp.input",
-              "operator": "⊆",
-              "expressionSource": "source.input"
+  "mrSet": [
+    {
+      "R": {
+        "relations": [
+          {
+            "expressionFollowUp": "followUp.input",
+            "operator": "⊆",
+            "expressionSource": "source.input"
+          },
+          {
+            "expressionFollowUp": "source.input",
+            "operator": "⊆",
+            "expressionSource": "followUp.input"
+          },
+          {
+            "expressionFollowUp": {
+              "operator": "LEN",
+              "list": "followUp.input"
             },
-            {
-              "expressionFollowUp": "source.input",
-              "operator": "⊆",
-              "expressionSource": "followUp.input"
-            },
-            {
-              "expressionFollowUp": {
-                "operator": "LEN",
-                "list": "followUp.input"
-              },
-              "operator": "==",
-              "expressionSource": {
-                "operator": "LEN",
-                "list": "source.input"
-              }
+            "operator": "==",
+            "expressionSource": {
+              "operator": "LEN",
+              "list": "source.input"
             }
-          ],
-          "connective": "AND"
-        },
-        "Rf": {
-          "relations": [
-            {
-              "expressionFollowUp": "followUp.output",
-              "operator": "==",
-              "expressionSource": "source.output"
-            }
-          ]
-        }
+          }
+        ],
+        "connective": "AND"
+      },
+      "Rf": {
+        "relations": [
+          {
+            "expressionFollowUp": "followUp.output",
+            "operator": "==",
+            "expressionSource": "source.output"
+          }
+        ]
       }
-    ]
-  }
+    }
+  ]
+}
