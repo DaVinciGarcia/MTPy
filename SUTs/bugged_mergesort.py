@@ -22,6 +22,19 @@ def mergesort(arr):
         return merge(left, right)
 
 
+
+"""
+Merge Sort
+
+
+Input:
+    arr: A list of ints
+
+Output:
+    The elements of arr in sorted order
+"""
+
+
 mergesort([0, 1, 2])
 
 
