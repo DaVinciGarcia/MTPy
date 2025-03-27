@@ -397,6 +397,8 @@ if __name__ == "__main__":
     # Inside your test workflow loop:
     for source_input, followup_input in test_cases:
         # Execute source test case
+        print(source_input == followup_input)
+
         source_result = engine.execute_test_case(source_input)
         if source_result.status != "pass":
             print(f"Source test failed: {source_input} → {source_result.error}")
